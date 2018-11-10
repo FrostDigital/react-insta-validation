@@ -1,6 +1,6 @@
 import validator from "validator";
 import commonValidationRules from "./CommonValidationRules";
-import { bindValue } from "./utils/form-utils";
+import { bindValue } from "./form-utils";
 import { observable, action } from "mobx";
 
 /**

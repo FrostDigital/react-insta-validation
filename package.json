@@ -27,28 +27,36 @@
 	"peerDependencies": {
 		"prop-types": "^15.0.0",
 		"react": "^15.0.0 || ^16.0.0",
-		"mobx": "^5.6.0",
-		"mobx-react": "^5.3.0"
+		"mobx": "^4.0.0 || ^5.0.0",
+		"mobx-react": "^4.0.0 || ^5.0.0"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.1.5",
 		"@babel/core": "^7.1.5",
-		"babel-core": "^7.0.0-bridge.0",
 		"@babel/plugin-proposal-class-properties": "^7.1.0",
 		"@babel/plugin-proposal-decorators": "^7.1.2",
 		"@babel/plugin-proposal-object-rest-spread": "^7.0.0",
 		"@babel/preset-env": "^7.1.5",
 		"@babel/preset-react": "^7.0.0",
 		"@babel/runtime": "^7.1.5",
+		"babel-core": "^7.0.0-bridge.0",
 		"babel-loader": "^8.0.4",
+		"enzyme": "^3.7.0",
+		"enzyme-adapter-react-16": "^1.7.0",
 		"jest": "^23.6.0",
 		"mobx": "^5.6.0",
 		"mobx-react": "^5.3.6",
 		"prop-types": "^15.6.2",
 		"react": "^16.6.0",
+		"react-app-rewire-mobx": "^1.0.9",
+		"react-dom": "^16.6.0",
+		"webpack": "^4.25.1",
 		"webpack-cli": "^3.1.2"
 	},
 	"dependencies": {
 		"validator": "^10.9.0"
+	},
+	"jest": {
+		"setupTestFrameworkScriptFile": "<rootDir>/src/setupTests.js"
 	}
 }
