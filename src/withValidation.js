@@ -69,7 +69,9 @@ function withValidation(ComposedComponent) {
 			// message already set
 			validationMessage: PropTypes.string,
 			// Name of field
-			name: PropTypes.string.isRequired
+			name: PropTypes.string.isRequired,
+			// Which event(s) to validate on,  only "blur" and "change" is supported
+			validateOn: PropTypes.oneOfType([PropTypes.string, PropTypes.array])
 		};
 
 		validateOn = this.parseArray(this.props.validateOn || "blur");
@@ -94,24 +96,26 @@ function withValidation(ComposedComponent) {
 		 * Registers provided validation rules to validator.
 		 */
 		registerValidationRules(validate, customValidationMessage) {
+			const { validator, name } = this.props;
+
 			validate = this.parseArray(validate);
 
-			this.props.validator.registerValidationRules(
+			validator.registerValidationRules(
 				validate.map(rule => {
 					const isFunction = typeof rule === "function";
 					const isString = typeof rule === "string";
 
-					if (isString || isFunction) {
+					if (isString) {
+						if (!FormValidator.globalRules[rule]) {
+							throw new Error("Missing validation rule '" + rule + "'");
+						}
+						rule = FormValidator.globalRules[rule];
+					} else if (isFunction) {
 						rule = { method: rule };
 					}
 
-					if (rule.validWhen === undefined) {
-						rule.validWhen = true;
-					}
-
-					return { ...rule, message: customValidationMessage || rule.message, field: this.props.name };
-				}),
-				this
+					return { ...rule, message: customValidationMessage || rule.message, field: name };
+				})
 			);
 		}
 

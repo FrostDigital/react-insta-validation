@@ -20,11 +20,26 @@ npm test
 ## Example usage
 
 ```javascript
-// Wrap input component in HoC withValidation which in turn will hook into validation
-// and
+
+// Register global rules which can be reused over multiple forms
+FormValidator.registerGlobalRules([
+	{
+		// name of validation rule
+		name: "required",
+		// the validator.js's function, ! indicates that value is
+		// valid when this function return false
+		method: "!isEmpty",
+		// will NOT skip validation if value is empty (default is true)
+		skipIfEmpty: false
+	}
+]);
+
+
+// Wrap input component in HoC withValidation to enable validation
 const InputWithValidation = withValidation({validationMessage, ...props}) => {
 	return (
 		<input {...props} />
+		// withValidation sets prop `validationMessage` if field is invalid
 		{validationMessage && <div className="error">{validationMessage}</div>}
 	);
 });
@@ -43,7 +58,6 @@ class UserForm extends React.Component {
 		}
 	}
 
-
 	render() {
 		return (
 			<form onSubmit={this.onSubmit}>
@@ -59,10 +73,16 @@ class UserForm extends React.Component {
 
 	onSubmit = (e) => {
 		// TODO
+
 	}
 
 	onChange = (e) => {
-		// TODO
+		// Bind value to state, but use nifty util to bind to nested objects by input name
+		this.setState({user: bindInputValue(e, this.state.user)});
 	}
 }
 ```
+
+## TODOs
+
+-   Example of async validation

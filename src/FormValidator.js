@@ -1,5 +1,4 @@
 import validator from "validator";
-import commonValidationRules from "./CommonValidationRules";
 import { bindValue } from "./form-utils";
 import { observable, action } from "mobx";
 
@@ -9,8 +8,38 @@ import { observable, action } from "mobx";
  * See https://github.com/mikeries/react-validation-tutorial for background.
  */
 export default class FormValidator {
-	validations = [];
+	/**
+	 * Array containing global rules that will be available for all forms across all form
+	 * validator instances.
+	 */
+	static globalRules = {};
 
+	/**
+	 * Registers global rules which will be available for all
+	 */
+	static registerGlobalRules = (rules = []) => {
+		rules.forEach(rule => {
+			FormValidator.globalRules[rule.name] = rule;
+		});
+	};
+
+	/**
+	 * Clears all global rules.
+	 */
+	static clearGlobalRules = () => {
+		FormValidator.globalRules = {};
+	};
+
+	/**
+	 * Array containing all declared validation rules for this validator instance
+	 * @type {Array<Object>}
+	 */
+	validationRules = [];
+
+	/**
+	 * A copy of form state that will track values set in each fields
+	 * value prop.
+	 */
 	cachedFormState = {};
 
 	@observable
@@ -18,17 +47,22 @@ export default class FormValidator {
 
 	/**
 	 *
-	 * @param {Array<Object>} validations
+	 * @param {Array<Object>} validationRules
 	 * @param {Object} opts
-	 * @param {Boolean} opts.convertNumberToString if to convert field values that are number to string before validation
+	 * @param {Boolean} opts.convertNumberToString if to convert field values that are numbers to string before validation
+	 * @param {String} opts.defaultMessage default error message
 	 */
-	constructor(validations = [], { convertNumberToString = true, defaultMessage = "Invalid" } = {}) {
-		this.commonValidationRules = commonValidationRules;
-		this.registerValidationRules(validations);
+	constructor(validationRules = [], { convertNumberToString = true, defaultMessage = "Invalid" } = {}) {
+		this.registerValidationRules(validationRules);
 		this.convertNumberToString = convertNumberToString;
 		this.defaultMessage = defaultMessage;
 	}
 
+	/**
+	 * Validates provided form state agains registered validation rules.
+	 *
+	 * @param {Object} formState
+	 */
 	@action
 	validate(formState) {
 		formState = { ...this.cachedFormState, ...formState };
@@ -38,34 +72,34 @@ export default class FormValidator {
 		let validation = this.validationResult || this.valid();
 
 		// Track fields that has been marked invalid in this validation attempt
-		// so we have a way of knowing when not to continue validation (since it already failed)
+		// so we have a way of knowing when not to continue validation
 		const invalidFieldsInValidationAttempt = {};
 
-		this.validations.forEach(rule => {
+		this.validationRules.forEach(rule => {
 			let fieldValue = this.getPropertyByPath(formState, rule.field);
 
 			if (!invalidFieldsInValidationAttempt[rule.field] && fieldValue !== undefined) {
 				fieldValue =
 					typeof fieldValue === "number" && this.convertNumberToString ? fieldValue + "" : fieldValue;
 
-				const validationMethod = typeof rule.method === "function" ? rule.method : validator[rule.method];
+				const validationMethod = this.getValidationFunction(rule);
 				const args = rule.args || [];
 				const isEmpty = this.isEmpty(fieldValue);
-				const skip = isEmpty && rule.allowEmpty;
+				const skip = isEmpty && rule.skipIfEmpty;
 
 				if (!skip && validationMethod(fieldValue, ...args, formState) !== rule.validWhen) {
 					validation[rule.field] = {
 						isInvalid: true,
 						message: rule.message || this.defaultMessage,
-						id: rule.id
+						groupId: rule.groupId
 					};
 					invalidFieldsInValidationAttempt[rule.field] = true;
 				} else {
 					validation[rule.field] = { isInvalid: false, message: "" };
 
-					if (rule.id) {
+					if (rule.groupId) {
 						Object.keys(validation).forEach(k => {
-							if (rule.id === validation[k].id) {
+							if (rule.groupId === validation[k].groupId) {
 								validation[k] = { isInvalid: false, message: "" };
 							}
 						});
@@ -84,7 +118,7 @@ export default class FormValidator {
 
 	valid() {
 		const validation = {};
-		this.validations.map(rule => (validation[rule.field] = { isInvalid: false, message: "" }));
+		this.validationRules.forEach(rule => (validation[rule.field] = { isInvalid: false, message: "" }));
 		return { isValid: true, ...validation };
 	}
 
@@ -98,25 +132,23 @@ export default class FormValidator {
 	 */
 	registerValidationRules(rules) {
 		rules.forEach(rule => {
-			const { field, method, message, args = [], validWhen, allowEmpty = true, id } = rule;
+			const { name, field, method, message, args = [], validWhen = true, skipIfEmpty = true, groupId } = rule;
 
-			let existingRule = this.validations.find(
-				validation => validation.field === field && validation.method === method
-			);
+			const isAlreadyRegistered =
+				name && this.validationRules.some(validation => validation.field === field && validation.name === name);
 
-			if (!existingRule) {
-				const commonValidationRule = this.commonValidationRules[method] || {};
+			if (!isAlreadyRegistered) {
+				const globalRule = { ...(FormValidator.globalRules[name] || {}) };
 
-				this.validations.push({
+				this.validationRules.push({
 					field,
-					id,
-					message: message || commonValidationRule.message,
-					method: commonValidationRule.method || method,
-					args: commonValidationRule.args || args,
-					validWhen:
-						commonValidationRule.validWhen !== undefined ? commonValidationRule.validWhen : validWhen,
-					allowEmpty:
-						commonValidationRule.allowEmpty !== undefined ? commonValidationRule.allowEmpty : allowEmpty
+					groupId,
+					name,
+					message: message || globalRule.message,
+					method: globalRule.method || method,
+					args: globalRule.args || args,
+					validWhen: globalRule.validWhen !== undefined ? globalRule.validWhen : validWhen,
+					skipIfEmpty: globalRule.skipIfEmpty !== undefined ? globalRule.skipIfEmpty : skipIfEmpty
 				});
 			}
 		});
@@ -142,5 +174,16 @@ export default class FormValidator {
 	setFieldValue(name, value) {
 		this.cachedFormState = bindValue(name, value, this.cachedFormState);
 		return this;
+	}
+
+	getValidationFunction(rule) {
+		// TODO: Method vs function, the semantic is kind of mixed - should align this
+		const method = typeof rule.method === "function" ? rule.method : validator[rule.method];
+
+		if (!method) {
+			throw new Error("Invalid/missing validation method '" + rule.method + "' for field '" + rule.field + "'");
+		}
+
+		return method;
 	}
 }

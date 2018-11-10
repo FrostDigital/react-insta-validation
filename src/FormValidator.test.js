@@ -5,6 +5,25 @@ import FormValidator from "./FormValidator";
  */
 let formValidator;
 
+beforeEach(() => {
+	FormValidator.clearGlobalRules();
+	FormValidator.registerGlobalRules([
+		{
+			name: "required",
+			method: "isEmpty",
+			message: "Field is required",
+			validWhen: false,
+			skipIfEmpty: false
+		},
+		{
+			name: "email",
+			method: "isEmail",
+			validWhen: true,
+			message: "Ogiltig e-postadress"
+		}
+	]);
+});
+
 it("should validate form when invalid", () => {
 	const validations = [
 		{
@@ -12,7 +31,7 @@ it("should validate form when invalid", () => {
 			method: "isEmpty",
 			validWhen: false,
 			message: "Ange ett användarnamn",
-			allowEmpty: false
+			skipIfEmpty: false
 		}
 	];
 
@@ -66,35 +85,32 @@ it("should register validation rule", () => {
 		validWhen: false,
 		message: "Ange ett användarnamn",
 		args: [],
-		allowEmpty: false
+		skipIfEmpty: false
 	};
 
 	formValidator = new FormValidator();
 	formValidator.registerValidationRules([validationRule]);
 
-	expect(formValidator.validations[0]).toEqual(validationRule);
+	expect(formValidator.validationRules[0]).toEqual(validationRule);
 });
 
 it("should not re-register same rule", () => {
 	const validationRule = {
 		field: "username",
-		method: "isEmpty",
-		validWhen: false,
-		message: "Ange ett användarnamn",
-		args: []
+		name: "required"
 	};
 
 	formValidator = new FormValidator([validationRule]);
 	formValidator.registerValidationRules([{ ...validationRule }]);
 
-	expect(formValidator.validations.length).toBe(1);
+	expect(formValidator.validationRules.length).toBe(1);
 });
 
 it("should override with custom message", () => {
 	const validations = [
 		{
+			name: "required",
 			field: "username",
-			method: "required",
 			message: "Custom message"
 		}
 	];
@@ -108,31 +124,31 @@ it("should override with custom message", () => {
 	expect(validationResult.username.message).toBe("Custom message");
 });
 
-it("should validate using a common validation rule (orgNo)", () => {
+it("should validate using a global validation rule (required)", () => {
 	const validations = [
 		{
-			field: "orgNo",
-			method: "orgNo"
+			field: "username",
+			name: "required"
 		}
 	];
 
 	formValidator = new FormValidator(validations);
 
-	const validationResult = formValidator.validate({ orgNo: "234" });
+	const validationResult = formValidator.validate({ username: "" });
 
 	expect(validationResult.isValid).toBeFalsy();
-	expect(validationResult.orgNo.isInvalid).toBeTruthy();
-	expect(validationResult.orgNo.message).toBe(formValidator.commonValidationRules.orgNo.message);
+	expect(validationResult.username.isInvalid).toBeTruthy();
+	expect(validationResult.username.message).toBe(FormValidator.globalRules.required.message);
 });
 
 it("should first fail validation and then succeed ", () => {
 	const validations = [
 		{
-			method: "required",
+			name: "required",
 			field: "firstName"
 		},
 		{
-			method: "required",
+			name: "required",
 			field: "lastName"
 		}
 	];
@@ -149,11 +165,11 @@ it("should first fail validation and then succeed ", () => {
 	expect(thirdValidationResult.isValid).toBeTruthy();
 });
 
-it("should not validate phone when field is empty", () => {
+it("should not validate email when field is empty", () => {
 	const validations = [
 		{
 			field: "email",
-			method: "email"
+			name: "email"
 		}
 	];
 
@@ -162,100 +178,6 @@ it("should not validate phone when field is empty", () => {
 	const validationResult = formValidator.validate({ email: "" });
 
 	expect(validationResult.isValid).toBeTruthy();
-});
-
-it("should validate personal number", () => {
-	const validations = [
-		{
-			field: "personalNumber",
-			method: "personalNumber"
-		}
-	];
-
-	formValidator = new FormValidator(validations);
-
-	const invalidPersonalNumbers = [
-		// Dash/space syntax
-		"199010101010",
-		"19901010 1010",
-		"19901010 - 1010",
-		// Century out of bound
-		"18901010-1010",
-		"21901010-1010",
-		// Month out of bound
-		"19900010-1010",
-		"19901310-1010",
-		// Day out of bound
-		"19901000-1010",
-		"19901032-1010"
-	];
-
-	const validPersonalNumbers = ["19901010-1010", "20001010-1010", "20000110-1010", "20001210-1010"];
-
-	invalidPersonalNumbers.forEach(personalNumber => {
-		const isValid = formValidator.validate({ personalNumber }).isValid;
-
-		if (isValid) {
-			console.log("Personal number should be invalid: ", personalNumber);
-		}
-
-		expect(isValid).toBeFalsy();
-	});
-
-	validPersonalNumbers.forEach(personalNumber => {
-		const isValid = formValidator.validate({ personalNumber }).isValid;
-
-		if (!isValid) {
-			console.log("Personal number should be valid: ", personalNumber);
-		}
-
-		expect(isValid).toBeTruthy();
-	});
-});
-
-it("should validate yyyyMmDd", () => {
-	const validations = [
-		{
-			field: "date",
-			method: "yyyy-mm-dd"
-		}
-	];
-
-	formValidator = new FormValidator(validations);
-
-	const invalidDates = [
-		// Invalid century
-		"2100-01-01",
-		"1800-01-01",
-		// Month out of bounds
-		"1900-00-01",
-		"1900-13-01",
-		// Day out of bounds
-		"1900-01-00",
-		"1900-01-32"
-	];
-
-	const validDates = ["1990-10-10", "2000-10-10"];
-
-	invalidDates.forEach(date => {
-		const isValid = formValidator.validate({ date }).isValid;
-
-		if (isValid) {
-			console.log("Date should be invalid: ", date);
-		}
-
-		expect(isValid).toBeFalsy();
-	});
-
-	validDates.forEach(date => {
-		const isValid = formValidator.validate({ date }).isValid;
-
-		if (!isValid) {
-			console.log("Date should be valid: ", date);
-		}
-
-		expect(isValid).toBeTruthy();
-	});
 });
 
 it("should validate using custom validation function", () => {
@@ -291,4 +213,39 @@ it("should validate with function that is based on multiple fields with initial 
 	expect(formValidator.validate({ foo: 1, bar: 0 }).isValid).toBeFalsy();
 	expect(formValidator.validate({ foo: 0, bar: 1 }).isValid).toBeFalsy();
 	expect(formValidator.validate({ foo: 1 }).isValid).toBeTruthy();
+});
+
+it("should remove validation error for group", () => {
+	const matchingPasswordsValidation = {
+		method: (val, { password, confirmPassword }) => password && confirmPassword && password === confirmPassword,
+		message: "Passwords does not match",
+		groupId: "matchingPasswords",
+		skipIfEmpty: false
+	};
+
+	const validations = [
+		{
+			...matchingPasswordsValidation,
+			field: "password"
+		},
+		{
+			...matchingPasswordsValidation,
+			field: "confirmPassword"
+		}
+	];
+
+	formValidator = new FormValidator(validations);
+
+	let validationRes;
+
+	validationRes = formValidator.validate({ password: "Password123" });
+	expect(validationRes.password.isInvalid).toBeTruthy();
+
+	validationRes = formValidator.validate({ confirmPassword: "Bassword321" });
+	expect(validationRes.confirmPassword.isInvalid).toBeTruthy();
+
+	validationRes = formValidator.validate({ confirmPassword: "Password123" });
+	// 👇 this is the gist of it, password field should change when confirmPassword was updated
+	expect(validationRes.password.isInvalid).toBeFalsy();
+	expect(validationRes.confirmPassword.isInvalid).toBeFalsy();
 });

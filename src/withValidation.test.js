@@ -6,6 +6,20 @@ import withValidation from "./withValidation";
 let validator;
 let ComponentWithValidation;
 
+beforeAll(() => {
+	FormValidator.registerGlobalRules([
+		{
+			name: "required",
+			method: "isEmpty",
+			message: "Field is required",
+			validWhen: false,
+			skipIfEmpty: false
+		}
+	]);
+});
+
+afterAll(() => FormValidator.clearGlobalRules());
+
 beforeEach(() => {
 	validator = new FormValidator();
 
@@ -14,7 +28,7 @@ beforeEach(() => {
 	});
 });
 
-it("should validate using validate function", () => {
+it("should validate using function as validate prop", () => {
 	const component = mountComponent({
 		validate: val => val.length > 1,
 		validationMessage: "Foo is invalid"
@@ -38,7 +52,7 @@ it("should fallback to default string if no message is provided", () => {
 	expect(validator.validationResult.foo.message).toBe("Invalid");
 });
 
-it("should validate using common validation rule required", () => {
+it("should validate using global validation rule", () => {
 	const component = mountComponent({
 		validate: "required"
 	});
@@ -57,7 +71,7 @@ it("should validate using multiple rules", () => {
 			{
 				method: val => val.length < 4,
 				message: "Value cannot be longer than 3 chars",
-				allowEmpty: true
+				skipIfEmpty: true
 			}
 		]
 	});
@@ -67,7 +81,7 @@ it("should validate using multiple rules", () => {
 
 	mockChangeAndBlur(component.find("input"), "");
 	expect(validator.validationResult.isValid).toBeFalsy();
-	expect(validator.validationResult.foo.message).toBe("Fältet är obligatoriskt");
+	expect(validator.validationResult.foo.message).toBe(FormValidator.globalRules.required.message);
 
 	mockChangeAndBlur(component.find("input"), "foobar");
 	expect(validator.validationResult.isValid).toBeFalsy();
@@ -86,6 +100,26 @@ it("should use custom message provided  using common validation rule required", 
 	expect(validator.validationResult.foo.message).toBe(customMessage);
 });
 
+it("should trigger validation on change", () => {
+	const component = mountComponent({
+		validate: "required",
+		validateOn: "change"
+	});
+
+	mockChange(component.find("input"), "");
+	expect(validator.validationResult.foo.isInvalid).toBeTruthy();
+});
+
+it("should NOT trigger validation on change", () => {
+	const component = mountComponent({
+		validate: "required",
+		validateOn: "blur"
+	});
+
+	mockChange(component.find("input"), "");
+	expect(validator.validationResult).toBeFalsy();
+});
+
 function mountComponent(props) {
 	return mount(
 		<ComponentWithValidation value={""} onChange={() => {}} name="foo" validator={validator} {...props} />
@@ -93,10 +127,9 @@ function mountComponent(props) {
 }
 
 /**
- * Helper function to quickly mock input change and blur on provided input.
+ * Helper function to mock input change and blur on provided input.
  *
- * @param {Object} validationInput
- * @param {String} fieldName
+ * @param {Object} input
  * @param {String} value
  */
 function mockChangeAndBlur(input, value) {
@@ -109,4 +142,22 @@ function mockChangeAndBlur(input, value) {
 	};
 
 	input.simulate("change", mockEvent).simulate("blur", mockEvent);
+}
+
+/**
+ * Helper function to mock input change on provided input.
+ *
+ * @param {Object} input
+ * @param {String} value
+ */
+function mockChange(input, value) {
+	const mockEvent = {
+		target: {
+			value,
+			name: input.props().name
+		},
+		preventDefault: () => {}
+	};
+
+	input.simulate("change", mockEvent);
 }
