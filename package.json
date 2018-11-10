@@ -1,0 +1,54 @@
+{
+	"name": "react-insta-validation",
+	"version": "0.0.1",
+	"description": "Simple react form validation powered by mobx",
+	"main": "build/index.js",
+	"scripts": {
+		"test": "jest",
+		"start": "webpack --watch",
+		"build": "webpack"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/FrostDigital/react-insta-validation.git"
+	},
+	"keywords": [
+		"form",
+		"validation",
+		"react",
+		"mobx"
+	],
+	"author": "joelso",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/FrostDigital/react-insta-validation/issues"
+	},
+	"homepage": "https://github.com/FrostDigital/react-insta-validation#readme",
+	"peerDependencies": {
+		"prop-types": "^15.0.0",
+		"react": "^15.0.0 || ^16.0.0",
+		"mobx": "^5.6.0",
+		"mobx-react": "^5.3.0"
+	},
+	"devDependencies": {
+		"@babel/cli": "^7.1.5",
+		"@babel/core": "^7.1.5",
+		"babel-core": "^7.0.0-bridge.0",
+		"@babel/plugin-proposal-class-properties": "^7.1.0",
+		"@babel/plugin-proposal-decorators": "^7.1.2",
+		"@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+		"@babel/preset-env": "^7.1.5",
+		"@babel/preset-react": "^7.0.0",
+		"@babel/runtime": "^7.1.5",
+		"babel-loader": "^8.0.4",
+		"jest": "^23.6.0",
+		"mobx": "^5.6.0",
+		"mobx-react": "^5.3.6",
+		"prop-types": "^15.6.2",
+		"react": "^16.6.0",
+		"webpack-cli": "^3.1.2"
+	},
+	"dependencies": {
+		"validator": "^10.9.0"
+	}
+}
