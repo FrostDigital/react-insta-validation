@@ -1,10 +1,14 @@
-var path = require("path");
+const path = require("path");
+
 module.exports = {
+	mode: process.env.NODE_ENV || "production",
 	entry: "./src/index.js",
+	devtool: "source-map",
 	output: {
 		path: path.resolve(__dirname, "build"),
 		filename: "index.js",
-		libraryTarget: "commonjs2"
+		libraryTarget: "umd",
+		library: "react-insta-validation"
 	},
 	module: {
 		rules: [
@@ -21,8 +25,11 @@ module.exports = {
 			}
 		]
 	},
-	externals: {
-		react: "commonjs react"
+	resolve: {
+		alias: {
+			react: path.resolve(__dirname, "./node_modules/react"),
+			"react-dom": path.resolve(__dirname, "./node_modules/react-dom")
+		}
 	},
-	mode: "production"
+	externals: ["react", "react-dom", "prop-types", "react-transition-group", "classnames"]
 };

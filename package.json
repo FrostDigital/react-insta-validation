@@ -6,8 +6,10 @@
 	"scripts": {
 		"test": "jest --runInBand",
 		"start": "webpack --watch",
-		"build": "webpack"
+		"build": "webpack",
+		"clean": "rm -rf build"
 	},
+	"typings": "./index.d.ts",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/FrostDigital/react-insta-validation.git"

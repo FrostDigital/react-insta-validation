@@ -134,6 +134,10 @@ export default class FormValidator {
 		rules.forEach(rule => {
 			const { name, field, method, message, args = [], validWhen = true, skipIfEmpty = true, groupId } = rule;
 
+			if (!name && !field) {
+				throw new Error("Either 'name' or 'field' must be set on validation rule");
+			}
+
 			const isAlreadyRegistered =
 				name && this.validationRules.some(validation => validation.field === field && validation.name === name);
 
