@@ -74,21 +74,27 @@ function withValidation(ComposedComponent) {
 			validateOn: PropTypes.oneOfType([PropTypes.string, PropTypes.array])
 		};
 
+		/**
+		 * Form validator instance
+		 * @type {FormValidator}
+		 */
+		validator = this.props.validator;
+
 		validateOn = this.parseArray(this.props.validateOn || "blur");
 
 		componentDidMount() {
-			const { validator, validate, validationMessage } = this.props;
+			const { validate, validationMessage } = this.props;
 
-			if (validator && validate) {
+			if (this.validator && validate) {
 				this.registerValidationRules(validate, validationMessage);
 			}
 		}
 
 		componentDidUpdate() {
-			const { validator, value, name } = this.props;
+			const { value, name } = this.props;
 
-			if (validator && value !== undefined) {
-				validator.setFieldValue(name, value);
+			if (this.validator && value !== undefined) {
+				this.validator.setFieldValue(name, value);
 			}
 		}
 
@@ -96,20 +102,20 @@ function withValidation(ComposedComponent) {
 		 * Registers provided validation rules to validator.
 		 */
 		registerValidationRules(validate, customValidationMessage) {
-			const { validator, name } = this.props;
+			const { name } = this.props;
 
 			validate = this.parseArray(validate);
 
-			validator.registerValidationRules(
+			this.validator.registerFieldValidations(
 				validate.map(rule => {
 					const isFunction = typeof rule === "function";
 					const isString = typeof rule === "string";
 
 					if (isString) {
-						if (!FormValidator.globalRules[rule]) {
+						if (!this.validator.formRules[rule]) {
 							throw new Error("Missing validation rule '" + rule + "'");
 						}
-						rule = FormValidator.globalRules[rule];
+						rule = this.validator.formRules[rule];
 					} else if (isFunction) {
 						rule = { method: rule };
 					}
@@ -120,24 +126,27 @@ function withValidation(ComposedComponent) {
 		}
 
 		handleBlur = e => {
-			if (this.validateOn.includes("blur") && this.props.validator) {
+			if (this.validateOn.includes("blur") && this.validator) {
 				const fieldState = bindInputValue(e, {});
-				this.props.validator.validate(fieldState);
+				this.validator.validate(fieldState);
 			}
+
+			this.props.onBlur && this.props.onBlur(e);
 		};
 
 		handleChange = e => {
-			if (this.validateOn.includes("change") && this.props.validator) {
+			if (this.validateOn.includes("change") && this.validator) {
 				const fieldState = bindInputValue(e, {});
-				this.props.validator.validate(fieldState);
+				this.validator.validate(fieldState);
 			}
 
 			this.props.onChange && this.props.onChange(e);
 		};
 
 		render() {
-			const { validator, name, validateOn, validate, ...rest } = this.props;
-			const validationResult = validator && validator.validationResult && validator.validationResult[name];
+			const { name, validateOn, validate, ...rest } = this.props;
+			const validationResult =
+				this.validator && this.validator.validationResult && this.validator.validationResult[name];
 			const isInvalid = validationResult && validationResult.isInvalid;
 			const validationMessage = validationResult && validationResult.message;
 

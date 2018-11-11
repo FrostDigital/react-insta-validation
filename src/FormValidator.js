@@ -31,10 +31,17 @@ export default class FormValidator {
 	};
 
 	/**
-	 * Array containing all declared validation rules for this validator instance
+	 * Array containing validation rules that are available to use for this
+	 * validator instance. Will override any existing rule that already exist
+	 * amongs global validation rules.
+	 */
+	formRules = { ...FormValidator.globalRules };
+
+	/**
+	 * Array containing all declared validations mapped to fields.
 	 * @type {Array<Object>}
 	 */
-	validationRules = [];
+	fieldValidations = [];
 
 	/**
 	 * A copy of form state that will track values set in each fields
@@ -47,13 +54,13 @@ export default class FormValidator {
 
 	/**
 	 *
-	 * @param {Array<Object>} validationRules
+	 * @param {Array<Object>} validationRules form validation rules
 	 * @param {Object} opts
 	 * @param {Boolean} opts.convertNumberToString if to convert field values that are numbers to string before validation
 	 * @param {String} opts.defaultMessage default error message
 	 */
 	constructor(validationRules = [], { convertNumberToString = true, defaultMessage = "Invalid" } = {}) {
-		this.registerValidationRules(validationRules);
+		this.registerFormRules(validationRules);
 		this.convertNumberToString = convertNumberToString;
 		this.defaultMessage = defaultMessage;
 	}
@@ -61,13 +68,11 @@ export default class FormValidator {
 	/**
 	 * Validates provided form state agains registered validation rules.
 	 *
-	 * @param {Object} formState
+	 * @param {Object} formStateFragment
 	 */
 	@action
-	validate(formState) {
-		formState = { ...this.cachedFormState, ...formState };
-
-		this.cachedFormState = formState;
+	validate(formStateFragment) {
+		this.cachedFormState = { ...this.cachedFormState, ...formStateFragment };
 
 		let validation = this.validationResult || this.valid();
 
@@ -75,8 +80,8 @@ export default class FormValidator {
 		// so we have a way of knowing when not to continue validation
 		const invalidFieldsInValidationAttempt = {};
 
-		this.validationRules.forEach(rule => {
-			let fieldValue = this.getPropertyByPath(formState, rule.field);
+		this.fieldValidations.forEach(rule => {
+			let fieldValue = this.getPropertyByPath(formStateFragment, rule.field);
 
 			if (!invalidFieldsInValidationAttempt[rule.field] && fieldValue !== undefined) {
 				fieldValue =
@@ -87,12 +92,13 @@ export default class FormValidator {
 				const isEmpty = this.isEmpty(fieldValue);
 				const skip = isEmpty && rule.skipIfEmpty;
 
-				if (!skip && validationMethod(fieldValue, ...args, formState) !== rule.validWhen) {
-					validation[rule.field] = {
+				if (!skip && validationMethod(fieldValue, ...args, this.cachedFormState) !== rule.validWhen) {
+					const fieldValidationResult = {
 						isInvalid: true,
 						message: rule.message || this.defaultMessage,
 						groupId: rule.groupId
 					};
+					validation[rule.field] = fieldValidationResult;
 					invalidFieldsInValidationAttempt[rule.field] = true;
 				} else {
 					validation[rule.field] = { isInvalid: false, message: "" };
@@ -118,20 +124,38 @@ export default class FormValidator {
 
 	valid() {
 		const validation = {};
-		this.validationRules.forEach(rule => (validation[rule.field] = { isInvalid: false, message: "" }));
+		this.fieldValidations.forEach(rule => (validation[rule.field] = { isInvalid: false, message: "" }));
 		return { isValid: true, ...validation };
 	}
 
 	/**
-	 * Registers new validation rules.
-	 *
-	 * Will check if rule (field and method) already exits and it that
-	 * case update the exiting rule.
-	 *
+	 * Registers form validation rules available to use in this form validator instance.
 	 * @param {Array} rules
 	 */
-	registerValidationRules(rules) {
+	registerFormRules(rules) {
 		rules.forEach(rule => {
+			if (!rule.name) {
+				throw new Error("Missing validation rule name for: " + JSON.stringify(rule || {}));
+			}
+
+			this.formRules[rule.name] = rule;
+		});
+		return this;
+	}
+
+	/**
+	 * Registers field validations.
+	 *
+	 * Each field validation contains the following:
+	 *
+	 * - A `field` attribute which identifies which form field this validation is for
+	 * - An option `name` attribute which is the name of the vadation rule that exists in global or form registry
+	 * - It may optionally contain the validation rule directly here, in that case `name` should not be set
+	 *
+	 * @param {Array} fieldValidations
+	 */
+	registerFieldValidations(fieldValidations) {
+		fieldValidations.forEach(rule => {
 			const { name, field, method, message, args = [], validWhen = true, skipIfEmpty = true, groupId } = rule;
 
 			if (!name && !field) {
@@ -139,23 +163,27 @@ export default class FormValidator {
 			}
 
 			const isAlreadyRegistered =
-				name && this.validationRules.some(validation => validation.field === field && validation.name === name);
+				name &&
+				this.fieldValidations.some(validation => validation.field === field && validation.name === name);
 
 			if (!isAlreadyRegistered) {
-				const globalRule = { ...(FormValidator.globalRules[name] || {}) };
+				const validationSpec = { ...this.formRules[name] };
 
-				this.validationRules.push({
+				const fieldValidation = {
 					field,
 					groupId,
 					name,
-					message: message || globalRule.message,
-					method: globalRule.method || method,
-					args: globalRule.args || args,
-					validWhen: globalRule.validWhen !== undefined ? globalRule.validWhen : validWhen,
-					skipIfEmpty: globalRule.skipIfEmpty !== undefined ? globalRule.skipIfEmpty : skipIfEmpty
-				});
+					message: message || validationSpec.message,
+					method: validationSpec.method || method,
+					args: validationSpec.args || args,
+					validWhen: validationSpec.validWhen !== undefined ? validationSpec.validWhen : validWhen,
+					skipIfEmpty: validationSpec.skipIfEmpty !== undefined ? validationSpec.skipIfEmpty : skipIfEmpty
+				};
+
+				this.fieldValidations.push(fieldValidation);
 			}
 		});
+		return this;
 	}
 
 	getPropertyByPath(obj, path) {

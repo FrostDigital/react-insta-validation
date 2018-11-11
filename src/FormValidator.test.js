@@ -35,7 +35,7 @@ it("should validate form when invalid", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	const validationResult = formValidator.validate({ username: "" });
 
@@ -53,7 +53,7 @@ it("should validate form when valid", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	const validationResult = formValidator.validate({ username: "foo@bar.se" });
 
@@ -70,7 +70,7 @@ it("should validate form with nested properties", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	const validationResult = formValidator.validate({ company: { name: "Name" } });
 
@@ -88,10 +88,9 @@ it("should register validation rule", () => {
 		skipIfEmpty: false
 	};
 
-	formValidator = new FormValidator();
-	formValidator.registerValidationRules([validationRule]);
+	formValidator = new FormValidator().registerFieldValidations([validationRule]);
 
-	expect(formValidator.validationRules[0]).toEqual(validationRule);
+	expect(formValidator.fieldValidations[0]).toEqual(validationRule);
 });
 
 it("should not re-register same rule", () => {
@@ -100,10 +99,11 @@ it("should not re-register same rule", () => {
 		name: "required"
 	};
 
-	formValidator = new FormValidator([validationRule]);
-	formValidator.registerValidationRules([{ ...validationRule }]);
+	formValidator = new FormValidator()
+		.registerFieldValidations([validationRule])
+		.registerFieldValidations([validationRule]);
 
-	expect(formValidator.validationRules.length).toBe(1);
+	expect(formValidator.fieldValidations.length).toBe(1);
 });
 
 it("should override with custom message", () => {
@@ -115,7 +115,7 @@ it("should override with custom message", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	const validationResult = formValidator.validate({ username: "" });
 
@@ -132,7 +132,7 @@ it("should validate using a global validation rule (required)", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	const validationResult = formValidator.validate({ username: "" });
 
@@ -153,7 +153,7 @@ it("should first fail validation and then succeed ", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	const firstValidationResult = formValidator.validate({ firstName: "", lastName: "" });
 	expect(firstValidationResult.isValid).toBeFalsy();
@@ -173,7 +173,7 @@ it("should not validate email when field is empty", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	const validationResult = formValidator.validate({ email: "" });
 
@@ -190,32 +190,14 @@ it("should validate using custom validation function", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	expect(formValidator.validate({ expertise: [] }).isValid).toBeTruthy();
 	expect(formValidator.validate({ expertise: ["foo", "bar"] }).isValid).toBeTruthy();
 	expect(formValidator.validate({ expertise: ["foo", "bar", "baz", "foz", "poop", "pie"] }).isValid).toBeFalsy();
 });
 
-it("should validate with function that is based on multiple fields with initial value", () => {
-	const validations = [
-		{
-			field: "foo",
-			method: (val, formState) => !!(formState.foo && formState.bar),
-			validWhen: true
-		}
-	];
-
-	formValidator = new FormValidator(validations).setFieldValue("foo", 1);
-
-	expect(formValidator.validate({ bar: 1 }).isValid).toBeTruthy();
-	expect(formValidator.validate({ bar: 0 }).isValid).toBeFalsy();
-	expect(formValidator.validate({ foo: 1, bar: 0 }).isValid).toBeFalsy();
-	expect(formValidator.validate({ foo: 0, bar: 1 }).isValid).toBeFalsy();
-	expect(formValidator.validate({ foo: 1 }).isValid).toBeTruthy();
-});
-
-it("should remove validation error for group", () => {
+it("should validate matching passwords", () => {
 	const matchingPasswordsValidation = {
 		method: (val, { password, confirmPassword }) => password && confirmPassword && password === confirmPassword,
 		message: "Passwords does not match",
@@ -234,12 +216,13 @@ it("should remove validation error for group", () => {
 		}
 	];
 
-	formValidator = new FormValidator(validations);
+	formValidator = new FormValidator().registerFieldValidations(validations);
 
 	let validationRes;
 
 	validationRes = formValidator.validate({ password: "Password123" });
 	expect(validationRes.password.isInvalid).toBeTruthy();
+	expect(validationRes.confirmPassword.isInvalid).toBeFalsy();
 
 	validationRes = formValidator.validate({ confirmPassword: "Bassword321" });
 	expect(validationRes.confirmPassword.isInvalid).toBeTruthy();

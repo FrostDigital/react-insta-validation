@@ -82,7 +82,18 @@ interface FormValidator {
 	 *
 	 * @param {Object} formState
 	 */
-	validate(formState: any);
+	validate(formState: any): FormValidationResult;
+}
+
+interface FormValidationResult {
+	isValid: Boolean;
+	[key: string]: FieldValidationResult;
+}
+
+interface FieldValidationResult {
+	isInvalid: Boolean;
+	message: String;
+	groupId?: String;
 }
 
 interface BindValue {
