@@ -20,6 +20,10 @@
 		"react",
 		"mobx"
 	],
+	"files": [
+		"build",
+		"index.d.ts"
+	],
 	"author": "joelso",
 	"license": "MIT",
 	"bugs": {
