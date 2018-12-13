@@ -1,3 +1,5 @@
+import objectPath from "object-path";
+
 /**
  * Binds value for provided event target value to object.
  * This is useful when binding form values to a state object.
@@ -24,30 +26,10 @@ export const bindInputValue = ({ target }, obj) => {
  *
  * @param {String} path
  * @param {any} value
- * @param {Object} obj
+ * @param {Object|Array} target
  */
-export const bindValue = (path, value, obj) => {
-	const newObj = { ...obj };
-
-	if (path.includes(".")) {
-		const propPath = path.split(".");
-
-		propPath.reduce((o, path, i) => {
-			const isLast = propPath.length - 1 === i;
-
-			if (isLast) {
-				o[path] = value;
-			} else {
-				o[path] = o[path] || {};
-			}
-
-			return o[path];
-		}, newObj);
-
-		return newObj;
-	} else {
-		newObj[path] = value;
-	}
-
-	return newObj;
+export const bindValue = (path, value, target) => {
+	const newTarget = Array.isArray(target) ? [...target] : { ...target };
+	objectPath.set(newTarget, path, value);
+	return newTarget;
 };

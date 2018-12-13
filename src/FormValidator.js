@@ -1,6 +1,7 @@
 import validator from "validator";
 import { bindValue } from "./form-utils";
 import { observable, action } from "mobx";
+import objectPath from "object-path";
 
 /**
  * Helper component to validate form inputs
@@ -188,8 +189,7 @@ export default class FormValidator {
 
 	getPropertyByPath(obj, path) {
 		try {
-			// eslint-disable-next-line
-			return eval(`obj.${path};`); // TODO: A better way wo eval?
+			return objectPath.get(obj, path);
 		} catch (err) {
 			// do nothing - this happens if parent prop does not exist, which means that value is undefined
 		}
