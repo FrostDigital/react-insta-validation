@@ -144,7 +144,7 @@ function withValidation(ComposedComponent) {
 		};
 
 		render() {
-			const { name, validateOn, validate, ...rest } = this.props;
+			const { name, validateOn, validate, validator, ...rest } = this.props;
 			const validationResult =
 				this.validator && this.validator.validationResult && this.validator.validationResult[name];
 			const isInvalid = validationResult && validationResult.isInvalid;
