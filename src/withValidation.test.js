@@ -30,7 +30,7 @@ beforeEach(() => {
 
 it("should validate using function as validate prop", () => {
 	const component = mountComponent({
-		validate: val => val.length > 1,
+		validate: ({ value }) => value.length > 1,
 		validationMessage: "Foo is invalid"
 	});
 
@@ -69,7 +69,7 @@ it("should validate using multiple rules", () => {
 		validate: [
 			"required",
 			{
-				method: val => val.length < 4,
+				method: ({ value }) => value.length < 4,
 				message: "Value cannot be longer than 3 chars",
 				skipIfEmpty: true
 			}
