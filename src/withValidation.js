@@ -83,10 +83,14 @@ function withValidation(ComposedComponent) {
 		validateOn = this.parseArray(this.props.validateOn || "blur");
 
 		componentDidMount() {
-			const { validate, validationMessage } = this.props;
+			const { validate, validationMessage, value, name } = this.props;
 
 			if (this.validator && validate) {
 				this.registerValidationRules(validate, validationMessage);
+
+				if (value !== undefined) {
+					this.validator.setFieldValue(name, value);
+				}
 			}
 		}
 

@@ -184,7 +184,7 @@ it("should validate using custom validation function", () => {
 	const validations = [
 		{
 			field: "expertise",
-			method: val => val.length > 0 && val.length < 6,
+			method: ({ value }) => value.length > 0 && value.length < 6,
 			message: "Ange 1-5 kompetenser",
 			validWhen: true
 		}
@@ -199,7 +199,8 @@ it("should validate using custom validation function", () => {
 
 it("should validate matching passwords", () => {
 	const matchingPasswordsValidation = {
-		method: (val, { password, confirmPassword }) => password && confirmPassword && password === confirmPassword,
+		method: ({ form: { password, confirmPassword } }) =>
+			password && confirmPassword && password === confirmPassword,
 		message: "Passwords does not match",
 		groupId: "matchingPasswords",
 		skipIfEmpty: false

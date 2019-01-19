@@ -45,10 +45,9 @@ export default class FormValidator {
 	fieldValidations = [];
 
 	/**
-	 * A copy of form state that will track values set in each fields
-	 * value prop.
+	 * A copy of form state
 	 */
-	cachedFormState = {};
+	formState = {};
 
 	@observable
 	validationResult = null;
@@ -73,16 +72,15 @@ export default class FormValidator {
 	 */
 	@action
 	validate(formStateFragment) {
-		this.cachedFormState = { ...this.cachedFormState, ...formStateFragment };
-
-		let validation = this.validationResult || this.valid();
-
-		// Track fields that has been marked invalid in this validation attempt
-		// so we have a way of knowing when not to continue validation
+		const validation = this.validationResult || this.valid();
 		const invalidFieldsInValidationAttempt = {};
 
 		this.fieldValidations.forEach(rule => {
 			let fieldValue = this.getPropertyByPath(formStateFragment, rule.field);
+
+			if (fieldValue !== undefined) {
+				this.formState = bindValue(rule.field, fieldValue, this.formState);
+			}
 
 			if (!invalidFieldsInValidationAttempt[rule.field] && fieldValue !== undefined) {
 				fieldValue =
@@ -93,7 +91,10 @@ export default class FormValidator {
 				const isEmpty = this.isEmpty(fieldValue);
 				const skip = isEmpty && rule.skipIfEmpty;
 
-				if (!skip && validationMethod(fieldValue, ...args, this.cachedFormState) !== rule.validWhen) {
+				if (
+					!skip &&
+					validationMethod({ value: fieldValue, args: args, form: this.formState }) !== rule.validWhen
+				) {
 					const fieldValidationResult = {
 						isInvalid: true,
 						message: rule.message || this.defaultMessage,
@@ -203,14 +204,22 @@ export default class FormValidator {
 		else return !!value;
 	}
 
+	/**
+	 *
+	 * @param {String} name of field, used as
+	 * @param {*} value
+	 */
 	setFieldValue(name, value) {
-		this.cachedFormState = bindValue(name, value, this.cachedFormState);
+		this.formState = bindValue(name, value, this.formState);
 		return this;
 	}
 
 	getValidationFunction(rule) {
 		// TODO: Method vs function, the semantic is kind of mixed - should align this
-		const method = typeof rule.method === "function" ? rule.method : validator[rule.method];
+		const method =
+			typeof rule.method === "function"
+				? rule.method
+				: ({ value, args }) => validator[rule.method](value, ...args);
 
 		if (!method) {
 			throw new Error("Invalid/missing validation method '" + rule.method + "' for field '" + rule.field + "'");
