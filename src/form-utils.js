@@ -29,7 +29,8 @@ export const bindInputValue = ({ target }, obj) => {
  * @param {Object|Array} target
  */
 export const bindValue = (path, value, target) => {
-	const newTarget = Array.isArray(target) ? [...target] : { ...target };
+	// TODO: Can we improve performance for deep clone?
+	const newTarget = JSON.parse(JSON.stringify(target || {}));
 	objectPath.set(newTarget, path, value);
 	return newTarget;
 };
