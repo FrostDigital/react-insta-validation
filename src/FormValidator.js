@@ -247,6 +247,9 @@ export default class FormValidator {
 	 * @param {Component} component
 	 */
 	unregisterComponent(component) {
-		this.formComponents.delete(component.props.name);
+		const fieldName = component.props.name;
+		this.formComponents.delete(fieldName);
+		this.fieldValidations = this.fieldValidations.filter(fieldValidation => fieldValidation.field !== fieldName);
+		delete this.validationResult[fieldName];
 	}
 }
