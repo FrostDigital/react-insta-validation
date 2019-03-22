@@ -2,7 +2,7 @@
 
 > TODO: Readme is work in progress
 
-Simple form validation that uses mobx observer/observable to (re)render on updates.
+Simple form validation.
 
 This library provides an Higher Order Component `withValidation` which can add validation to any
 field like component, such as an input or select but also custom UI widgets as long as they honor the

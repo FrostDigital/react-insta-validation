@@ -1,6 +1,6 @@
+import { Component } from "react";
 import validator from "validator";
 import { bindValue } from "./form-utils";
-import { observable, action } from "mobx";
 import objectPath from "object-path";
 
 /**
@@ -49,8 +49,9 @@ export default class FormValidator {
 	 */
 	formState = {};
 
-	@observable
 	validationResult = null;
+
+	formComponents = new Map();
 
 	/**
 	 *
@@ -68,15 +69,15 @@ export default class FormValidator {
 	/**
 	 * Validates provided form state agains registered validation rules.
 	 *
-	 * @param {Object} formStateFragment
+	 * @param {Object} form
 	 */
-	@action
-	validate(formStateFragment) {
+	// @action
+	validate(form) {
 		const validation = this.validationResult || this.valid();
 		const invalidFieldsInValidationAttempt = {};
 
 		this.fieldValidations.forEach(rule => {
-			let fieldValue = this.getPropertyByPath(formStateFragment, rule.field);
+			let fieldValue = this.getPropertyByPath(form, rule.field);
 
 			if (fieldValue !== undefined) {
 				this.formState = bindValue(rule.field, fieldValue, this.formState);
@@ -104,7 +105,6 @@ export default class FormValidator {
 					invalidFieldsInValidationAttempt[rule.field] = true;
 				} else {
 					validation[rule.field] = { isInvalid: false, message: "" };
-
 					if (rule.groupId) {
 						Object.keys(validation).forEach(k => {
 							if (rule.groupId === validation[k].groupId) {
@@ -120,6 +120,8 @@ export default class FormValidator {
 		validation.isValid = !Object.keys(validation).some(key => validation[key].isInvalid);
 
 		this.validationResult = validation;
+
+		this.reRenderForm();
 
 		return validation;
 	}
@@ -155,8 +157,13 @@ export default class FormValidator {
 	 * - It may optionally contain the validation rule directly here, in that case `name` should not be set
 	 *
 	 * @param {Array} fieldValidations
+	 * @param {Component=} component
 	 */
-	registerFieldValidations(fieldValidations) {
+	registerFieldValidations(fieldValidations, component) {
+		if (component) {
+			this.formComponents.set(component.props.name, component);
+		}
+
 		fieldValidations.forEach(rule => {
 			const { name, field, method, message, args = [], validWhen = true, skipIfEmpty = true, groupId } = rule;
 
@@ -226,5 +233,20 @@ export default class FormValidator {
 		}
 
 		return method;
+	}
+
+	reRenderForm() {
+		// TODO: Re-render only component affected by validation
+		[...this.formComponents.values()].forEach(component => {
+			component.forceUpdate();
+		});
+	}
+
+	/**
+	 * Unregisters component from validator.
+	 * @param {Component} component
+	 */
+	unregisterComponent(component) {
+		this.formComponents.delete(component.props.name);
 	}
 }
