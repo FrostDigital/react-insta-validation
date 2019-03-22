@@ -2,7 +2,6 @@ import React from "react";
 import PropTypes from "prop-types";
 import FormValidator from "./FormValidator";
 import { bindInputValue } from "./form-utils";
-import { observer } from "mobx-react";
 
 /**
  * Higher order Component (HoC) that adds validation logic to
@@ -53,7 +52,7 @@ import { observer } from "mobx-react";
  * @param {Object} ComposedComponent
  */
 function withValidation(ComposedComponent) {
-	@observer
+	// @observer
 	class ComponentWithValidation extends React.Component {
 		static propTypes = {
 			// Validation rule, supports following formats:
@@ -125,7 +124,8 @@ function withValidation(ComposedComponent) {
 					}
 
 					return { ...rule, message: customValidationMessage || rule.message, field: name };
-				})
+				}),
+				this
 			);
 		}
 
