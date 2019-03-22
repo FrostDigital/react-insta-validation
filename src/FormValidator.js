@@ -242,4 +242,12 @@ export default class FormValidator {
 			component.forceUpdate();
 		});
 	}
+
+	/**
+	 * Unregisters component from validator.
+	 * @param {Component} component
+	 */
+	unregisterComponent(component) {
+		this.formComponents.delete(component.props.name);
+	}
 }

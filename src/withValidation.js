@@ -100,6 +100,11 @@ function withValidation(ComposedComponent) {
 				this.validator.setFieldValue(name, value);
 			}
 		}
+		componentWillUnmount() {
+			if (this.validator) {
+				this.validator.unregisterComponent(this);
+			}
+		}
 
 		/**
 		 * Registers provided validation rules to validator.
