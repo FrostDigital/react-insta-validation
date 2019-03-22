@@ -52,7 +52,6 @@ import { bindInputValue } from "./form-utils";
  * @param {Object} ComposedComponent
  */
 function withValidation(ComposedComponent) {
-	// @observer
 	class ComponentWithValidation extends React.Component {
 		static propTypes = {
 			// Validation rule, supports following formats:

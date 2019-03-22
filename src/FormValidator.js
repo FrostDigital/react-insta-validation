@@ -49,7 +49,6 @@ export default class FormValidator {
 	 */
 	formState = {};
 
-	// @observable
 	validationResult = null;
 
 	formComponents = new Map();
