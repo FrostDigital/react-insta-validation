@@ -3,6 +3,8 @@ import validator from "validator";
 import { bindValue } from "./form-utils";
 import objectPath from "object-path";
 
+const DEBUG = 0;
+
 /**
  * Helper component to validate form inputs
  *
@@ -91,10 +93,11 @@ export default class FormValidator {
 				const args = rule.args || [];
 				const isEmpty = this.isEmpty(fieldValue);
 				const skip = isEmpty && rule.skipIfEmpty;
+				const group = this.getGroupSibblingValues(rule, this.formState);
 
 				if (
 					!skip &&
-					validationMethod({ value: fieldValue, args: args, form: this.formState }) !== rule.validWhen
+					validationMethod({ value: fieldValue, args, form: this.formState, group }) !== rule.validWhen
 				) {
 					const fieldValidationResult = {
 						isInvalid: true,
@@ -165,6 +168,12 @@ export default class FormValidator {
 		}
 
 		fieldValidations.forEach(rule => {
+			this.log(
+				`Registering field validation rule ${rule.name} for field ${rule.field} ${
+					rule.groupId ? "(group " + rule.groupId + ")" : ""
+				}`
+			);
+
 			const { name, field, method, message, args = [], validWhen = true, skipIfEmpty = true, groupId } = rule;
 
 			if (!name && !field) {
@@ -258,6 +267,25 @@ export default class FormValidator {
 
 		if (this.validationResult) {
 			delete this.validationResult[fieldName];
+		}
+	}
+
+	getGroupSibblingValues(rule, form) {
+		if (!rule.groupId) return {};
+
+		const groupFieldValidations = this.fieldValidations.filter(
+			fieldValidation => fieldValidation.groupId === rule.groupId
+		);
+
+		return groupFieldValidations.reduce((res, fieldValidation) => {
+			res[fieldValidation.field] = this.getPropertyByPath(form, fieldValidation.field);
+			return res;
+		}, {});
+	}
+
+	log(msg) {
+		if (DEBUG) {
+			console.log(msg);
 		}
 	}
 }
