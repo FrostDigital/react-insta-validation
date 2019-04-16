@@ -278,7 +278,8 @@ export default class FormValidator {
 		);
 
 		return groupFieldValidations.reduce((res, fieldValidation) => {
-			res[fieldValidation.field] = this.getPropertyByPath(form, fieldValidation.field);
+			const keys = fieldValidation.field.split(".");
+			res[keys[keys.length - 1]] = this.getPropertyByPath(form, fieldValidation.field);
 			return res;
 		}, {});
 	}
