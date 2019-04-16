@@ -69,7 +69,9 @@ function withValidation(ComposedComponent) {
 			// Name of field
 			name: PropTypes.string.isRequired,
 			// Which event(s) to validate on,  only "blur" and "change" is supported
-			validateOn: PropTypes.oneOfType([PropTypes.string, PropTypes.array])
+			validateOn: PropTypes.oneOfType([PropTypes.string, PropTypes.array]),
+			// Optional validation group id
+			validationGroup: PropTypes.string
 		};
 
 		/**
@@ -81,10 +83,10 @@ function withValidation(ComposedComponent) {
 		validateOn = this.parseArray(this.props.validateOn || "blur");
 
 		componentDidMount() {
-			const { validate, validationMessage, value, name } = this.props;
+			const { validate, validationMessage, value, name, validationGroup } = this.props;
 
 			if (this.validator && validate) {
-				this.registerValidationRules(validate, validationMessage);
+				this.registerValidationRules(validate, validationMessage, validationGroup);
 
 				if (value !== undefined) {
 					this.validator.setFieldValue(name, value);
@@ -108,7 +110,7 @@ function withValidation(ComposedComponent) {
 		/**
 		 * Registers provided validation rules to validator.
 		 */
-		registerValidationRules(validate, customValidationMessage) {
+		registerValidationRules(validate, customValidationMessage, validationGroup) {
 			const { name } = this.props;
 
 			validate = this.parseArray(validate);
@@ -127,7 +129,12 @@ function withValidation(ComposedComponent) {
 						rule = { method: rule };
 					}
 
-					return { ...rule, message: customValidationMessage || rule.message, field: name };
+					return {
+						...rule,
+						message: customValidationMessage || rule.message,
+						field: name,
+						groupId: validationGroup || rule.groupId
+					};
 				}),
 				this
 			);
@@ -152,7 +159,7 @@ function withValidation(ComposedComponent) {
 		};
 
 		render() {
-			const { name, validateOn, validate, validator, ...rest } = this.props;
+			const { name, validateOn, validate, validator, validationGroup, ...rest } = this.props;
 			const validationResult =
 				this.validator && this.validator.validationResult && this.validator.validationResult[name];
 			const isInvalid = validationResult && validationResult.isInvalid;
