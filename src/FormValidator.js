@@ -73,7 +73,6 @@ export default class FormValidator {
 	 *
 	 * @param {Object} form
 	 */
-	// @action
 	validate(form) {
 		const validation = this.validationResult || this.valid();
 		const invalidFieldsInValidationAttempt = {};
