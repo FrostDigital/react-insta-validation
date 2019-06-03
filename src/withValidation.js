@@ -173,6 +173,7 @@ function withValidation(ComposedComponent) {
 					validationResult={validationResult}
 					isInvalid={isInvalid}
 					validationMessage={validationMessage}
+					validator={validator}
 					name={name}
 				/>
 			);
