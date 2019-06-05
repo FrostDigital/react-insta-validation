@@ -30,6 +30,7 @@ export const bindInputValue = ({ target }, obj) => {
  */
 export const bindValue = (path, value, target) => {
 	// TODO: Can we improve performance for deep clone?
+	// debugger;
 	const newTarget = JSON.parse(JSON.stringify(target || {}));
 	objectPath.set(newTarget, path, value);
 	return newTarget;

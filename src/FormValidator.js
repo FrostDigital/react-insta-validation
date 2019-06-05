@@ -78,9 +78,19 @@ export default class FormValidator {
 		const invalidFieldsInValidationAttempt = {};
 
 		this.fieldValidations.forEach(rule => {
+			// boven i dramat = getPropertyByPath
+			// exempel obj = { prices: [ { price: 0 }, { price: 0 } ] }
+			// validering finns på både "prices" och "prices.1.price"
+
+			// rule.field = "prices.1.price"
+			// fieldValue kommer inte vara undefined eftersom
+			// när man söker igenom fieldValidations på "prices"
+			// med getPropertyByPath kommer prices att hittas
 			let fieldValue = this.getPropertyByPath(form, rule.field);
 
 			if (fieldValue !== undefined) {
+				debugger;
+				// sets formState; prices = [empty, {price: ""}]
 				this.formState = bindValue(rule.field, fieldValue, this.formState);
 			}
 
@@ -205,6 +215,7 @@ export default class FormValidator {
 
 	getPropertyByPath(obj, path) {
 		try {
+			debugger;
 			return objectPath.get(obj, path);
 		} catch (err) {
 			// do nothing - this happens if parent prop does not exist, which means that value is undefined

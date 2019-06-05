@@ -142,7 +142,9 @@ function withValidation(ComposedComponent) {
 
 		handleBlur = e => {
 			if (this.validateOn.includes("blur") && this.validator) {
+				// fieldState = [empty, {price: ""}]
 				const fieldState = bindInputValue(e, {});
+				// debugger;
 				this.validator.validate(fieldState);
 			}
 
@@ -151,6 +153,7 @@ function withValidation(ComposedComponent) {
 
 		handleChange = e => {
 			if (this.validateOn.includes("change") && this.validator) {
+				// debugger;
 				const fieldState = bindInputValue(e, {});
 				this.validator.validate(fieldState);
 			}
