@@ -1,7 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
 import FormValidator from "./FormValidator";
-import { bindInputValue } from "./form-utils";
 
 /**
  * Higher order Component (HoC) that adds validation logic to
@@ -142,8 +141,7 @@ function withValidation(ComposedComponent) {
 
 		handleBlur = e => {
 			if (this.validateOn.includes("blur") && this.validator) {
-				const fieldState = bindInputValue(e, {});
-				this.validator.validate(fieldState);
+				this.validator.setInputValue(e).validate();
 			}
 
 			this.props.onBlur && this.props.onBlur(e);
@@ -151,8 +149,7 @@ function withValidation(ComposedComponent) {
 
 		handleChange = e => {
 			if (this.validateOn.includes("change") && this.validator) {
-				const fieldState = bindInputValue(e, {});
-				this.validator.validate(fieldState);
+				this.validator.setInputValue(e).validate();
 			}
 
 			this.props.onChange && this.props.onChange(e);
