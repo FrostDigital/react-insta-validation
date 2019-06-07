@@ -2,6 +2,7 @@ import { Component } from "react";
 import validator from "validator";
 import { bindValue } from "./form-utils";
 import objectPath from "object-path";
+import { bindInputValue } from "./index";
 
 const DEBUG = 0;
 
@@ -71,9 +72,9 @@ export default class FormValidator {
 	/**
 	 * Validates provided form state agains registered validation rules.
 	 *
-	 * @param {Object} form
+	 * @param {Object=} form
 	 */
-	validate(form) {
+	validate(form = this.formState) {
 		const validation = this.validationResult || this.valid();
 		const invalidFieldsInValidationAttempt = {};
 
@@ -169,7 +170,7 @@ export default class FormValidator {
 		fieldValidations.forEach(rule => {
 			this.log(
 				`Registering field validation rule ${rule.name} for field ${rule.field} ${
-					rule.groupId ? "(group " + rule.groupId + ")" : ""
+				rule.groupId ? "(group " + rule.groupId + ")" : ""
 				}`
 			);
 
@@ -217,6 +218,16 @@ export default class FormValidator {
 		else if (Array.isArray(value)) return value.length === 0;
 		else if (type === "object") return value === {};
 		else return !!value;
+	}
+
+	/**
+	 * Sets input value on validation form state.
+	 * 
+	 * @param {Object} event
+	 */
+	setInputValue(event) {
+		this.formState = bindInputValue(event, this.formState);
+		return this;
 	}
 
 	/**
