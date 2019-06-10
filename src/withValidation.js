@@ -50,7 +50,7 @@ import FormValidator from "./FormValidator";
  *
  * @param {Object} ComposedComponent
  */
-function withValidation(ComposedComponent) {
+function withValidation(ComposedComponent, options = {}) {
 	class ComponentWithValidation extends React.Component {
 		static propTypes = {
 			// Validation rule, supports following formats:
@@ -171,6 +171,7 @@ function withValidation(ComposedComponent) {
 					isInvalid={isInvalid}
 					validationMessage={validationMessage}
 					name={name}
+					validator={options.passValidator && validator}
 				/>
 			);
 		}
